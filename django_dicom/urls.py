@@ -13,7 +13,7 @@ router.register(r"patient", views.PatientViewSet)
 urlpatterns = [
     path("dicom/", include(router.urls)),
     path(
-        "dicom/patient/<str:uid>/download",
+        "dicom/patient/<str:uid>/download/",
         views.PatientViewSet.as_view({"get": "download_series_set"}),
         name="download_series_set",
     ),
@@ -26,5 +26,10 @@ urlpatterns = [
         "dicom/series/get_csv/",
         views.SeriesViewSet.as_view({"get": "get_csv"}),
         name="get_csv",
+    ),
+    path(
+        "dicom/series/<int:pk>/download/",
+        views.SeriesViewSet.as_view({"get": "download_series"}),
+        name="download_series",
     ),
 ]

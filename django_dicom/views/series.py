@@ -1,6 +1,5 @@
 import os
 import pandas as pd
-
 from django.contrib.auth import get_user_model
 from django.http import FileResponse
 from django_dicom.filters import SeriesFilter
@@ -12,6 +11,8 @@ from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.request import Request
+from shutil import make_archive
+
 
 CSV_COLUMNS = {
     "ID": "id",
@@ -39,9 +40,11 @@ class SeriesViewSet(DefaultsMixin, viewsets.ModelViewSet):
 
     filter_class = SeriesFilter
     ordering_fields = (
+        "id",
         "study",
         "patient",
         "number",
+        "description",
         "date",
         "time",
         "scanning_sequence",
@@ -51,6 +54,8 @@ class SeriesViewSet(DefaultsMixin, viewsets.ModelViewSet):
         "inversion_time",
         "repetition_time",
         "manufacturer",
+        "sequence_name",
+        "pulse_sequence_name",
         "manufacturer_model_name",
         "magnetic_field_strength",
         "device_serial_number",
@@ -111,6 +116,16 @@ class SeriesViewSet(DefaultsMixin, viewsets.ModelViewSet):
         series = series.values_list(*list(CSV_COLUMNS.values()))
         output = pd.DataFrame.from_records(series).rename(columns=columns)
         output.to_csv(filename, encoding="utf-8-sig", index=False)
+        response = FileResponse(open(filename, "rb"), as_attachment=True)
+        os.unlink(filename)
+        return response
+
+    @action(detail=True, methods=["GET"])
+    def download_series(self, request: Request, pk) -> Response:
+        series = self.queryset.get(id=pk)
+        series_dir = series.path
+        filename = str(series_dir) + ".zip"
+        make_archive(series_dir, "zip", series_dir)
         response = FileResponse(open(filename, "rb"), as_attachment=True)
         os.unlink(filename)
         return response
